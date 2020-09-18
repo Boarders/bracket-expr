@@ -31,8 +31,8 @@ main = do
   putStrLn $ "input : " <> input
   let exprTrees = parseExpr input
   traverse_ printExprTreeAndVal exprTrees
-  let width  = 200
-  let height = 300
+  let width  = 150
+  let height = 350
   let fileName n = "expr" <> show n <> ".svg"
   let size       = mkSizeSpec (V2 (Just width) (Just height))
   let createImage (t,n) =
@@ -45,9 +45,6 @@ main = do
     getCurrentDirectory >>= print
     createImages
     
-  
-
-
 data Expr =
     Lit Int
   | Op Op Expr Expr
