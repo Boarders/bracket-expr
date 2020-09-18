@@ -7,8 +7,6 @@ module Main where
 import Control.Applicative
 import Data.Ratio
 import Control.Monad
-import System.IO.Unsafe
-import Debug.Trace
 import Data.Char (isDigit)
 import Text.Earley
 import Data.Tree.Pretty
@@ -31,16 +29,16 @@ main = do
   putStrLn $ "input : " <> input
   let exprTrees = parseExpr input
   traverse_ printExprTreeAndVal exprTrees
-  let width  = 150
-  let height = 350
+  let w  = 150
+  let h = 350
   let fileName n = "expr" <> show n <> ".svg"
-  let size       = mkSizeSpec (V2 (Just width) (Just height))
+  let imageSize       = mkSizeSpec (V2 (Just w) (Just h))
   let createImage (t,n) =
         let
          valS = printValue . eval $ t
        in
-         renderSVG (fileName n) size (diagTree valS . exprToTreeS $ t)
-  let createImages = traverse_ createImage (zip exprTrees [1..])
+         renderSVG (fileName n) imageSize (diagTree valS . exprToTreeS $ t)
+  let createImages = traverse_ createImage (zip exprTrees ([1..] :: [Int]))
   withCurrentDirectory "images" $ do
     getCurrentDirectory >>= print
     createImages
@@ -67,7 +65,7 @@ strToOp "+" = pure Add
 strToOp "-" = pure Sub
 strToOp "*" = pure Mul
 strToOp "/" = pure Div
-sstrToOp str =
+strToOp str =
   Left $ "Expected one of " <> show ops <> "but received: " <> str
   
 
@@ -93,7 +91,7 @@ eval = \case
       case val2 of
         Just 0 -> Nothing
         _      -> liftA2 (/) (eval expr1) val2
-  Op op expr1 expr2  -> liftA2 (interpOp op) (eval expr1) (eval expr2)
+  Op rator expr1 expr2  -> liftA2 (interpOp rator) (eval expr1) (eval expr2)
 
 printValue :: Maybe (Ratio Int) -> String
 printValue = \case
@@ -114,12 +112,12 @@ data Token = TOp Op | TLit Int
 printTok :: Token -> String
 printTok = \case
   TLit n -> show n
-  TOp op -> opToStr op
+  TOp rator -> opToStr rator
 
 exprToTree :: Expr -> Tree Token
 exprToTree = \case
   Lit n -> Node (TLit n) []
-  Op op e1 e2 -> Node (TOp op) [exprToTree e1, exprToTree e2]
+  Op rator e1 e2 -> Node (TOp rator) [exprToTree e1, exprToTree e2]
 
 exprToTreeS :: Expr -> Tree String
 exprToTreeS = fmap printTok . exprToTree
@@ -131,8 +129,8 @@ printExprTreeAndVal e = do
   putStrLn "Expression: "
   putStrLn $ unlines . indent 15 . lines . drawVerticalTree . fmap printTok . exprToTree $ e
   putStrLn ""
-  let value = eval e
-  putStrLn $ "value: " <> printValue value
+  let val = eval e
+  putStrLn $ "value: " <> printValue val
   putStrLn ""  
   where
     indent n = fmap ((replicate n ' ') <>)
